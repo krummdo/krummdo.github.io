@@ -116,7 +116,7 @@
             console.log('Add Agent', data)
 
             const Target = data.gender === 'MALE' ? THREE.BoxGeometry : THREE.CylinderGeometry;
-            const texture = new THREE.TextureLoader().load( 'Images/wood.jpg', renderer.render( scene, camera ) );
+            const texture = new THREE.TextureLoader().load( './wood.jpg', renderer.render( scene, camera ) );
                 texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
             const mesh = new THREE.Mesh(
@@ -270,7 +270,7 @@
         // scene.add(gridXZ);
 
         // note: 4x4 checkboard pattern scaled so that each square is 25 by 25 pixels.
-        var floorTexture = new THREE.TextureLoader().load( 'Images/bkg.jpg', renderer.render( scene, camera ) );
+        var floorTexture = new THREE.TextureLoader().load( './bkg.jpg', renderer.render( scene, camera ) );
         floorTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         // var floorTexture = new THREE.ImageUtils.loadTexture( 'Images/bkg.jpg' );
         floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
