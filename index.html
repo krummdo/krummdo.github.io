@@ -1,1 +1,334 @@
-Hello World
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>Constelaciones Familiares</title>
+    <style>
+        body{
+            margin:0;
+            overflow:hidden;
+        }
+
+        canvas{
+            cursor:grab;
+            cursor:-webkit-grab;
+            cursor:-moz-grab;
+        }
+        canvas:active{
+            cursor:grabbing;
+            cursor:-webkit-grabbing;
+            cursor:-moz-grabbing;
+        }
+
+        #info {
+            position: absolute;
+            top: 0px;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            pointer-events: none;
+            z-index: 1;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">
+        <a>Constelaciones Familiares</a>
+        <br>
+        <strong>Adulto Masculino</strong>: 1, 
+        <strong>Adulto Femenino</strong>: 2, 
+        <strong>Menor Masculino</strong>: 3,
+        <strong>Menor Femenino</strong>: 4 
+    </div>
+
+    <script type="module">
+        import * as THREE from "../Three.js";
+        import { OrbitControls } from "./OrbitControls.js";
+        import { DragControls } from "./DragControls.js";
+
+        //======================================================================
+
+        //#region Variables
+        var scene, renderer, camera, control, cube, orbit;
+        var elements = [];
+        var selected = [];
+        var GET_DATA = {
+            49: {
+                target: 'ADULT',
+                gender: 'MALE',
+                size: {
+                    x: 1,
+                    y: 2,
+                    z: 1
+                }
+            },
+            50: {
+                target: 'ADULT',
+                gender: 'FEMALE',
+                size: {
+                    x: 0.5,
+                    y: 0.5,
+                    z: 2
+                }
+            },
+            51: {
+                target: 'MINOR',
+                gender: 'MALE',
+                size: {
+                    x: 1,
+                    y: 1,
+                    z: 1
+                }
+            },
+            52: {
+                target: 'MINOR',
+                gender: 'FEMALE',
+                size: {
+                    x: 0.5,
+                    y: 0.5,
+                    z: 1
+                }
+            }
+        }
+        //#endregion
+
+        
+        //#region Events
+
+        function render() { renderer.render( scene, camera ); }
+        
+        function animate() {
+            requestAnimationFrame( animate );
+            renderer.render( scene, camera );
+        }
+
+        function getRandomName() {
+            return new Date().getUTCMilliseconds();
+        }
+
+        function getNewAgent(data) {
+            console.log('Add Agent', data)
+
+            const Target = data.gender === 'MALE' ? THREE.BoxGeometry : THREE.CylinderGeometry;
+            const texture = new THREE.TextureLoader().load( 'Images/wood.jpg', renderer.render( scene, camera ) );
+                texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+            const mesh = new THREE.Mesh(
+                new Target( data.size.x, data.size.y, data.size.z, 50 ),
+                new THREE.MeshLambertMaterial( { map: texture, transparent: false } ) //cubeMaterialArray
+            );
+
+            mesh.name =  getRandomName();
+            mesh.position.y = 1;
+
+            return mesh;
+        }
+
+        function removeEntity(object) {
+            // var selectedObject = scene.getObjectByName(object.name);
+            scene.remove( object );
+            animate();
+        }
+
+        function rotate() {
+            if(selected.length == 2) _alert('Deseleccione los elementos');
+
+            if(selected.length == 0) _alert('Seleccione un elemento');
+
+            var object = scene.children.find(x => x.name === selected[0].name);
+            if(!object) _alert('Ha ocurrido un error');
+
+            // lay entity back
+            object.position.y = object.rotation.x > 0 ? 1 : 0.5; 
+            object.rotateX(object.rotation.x > 0 ? (object.rotation.x * -1) : 55);
+            render(); 
+        }
+
+        function _alert(message) {
+            alert(message);
+            return;
+        }
+        
+        function keyHandler(event) {
+
+            if(!event) return;
+
+            switch ( event.keyCode ) {
+                case 49:
+                case 50:
+                case 51:
+                case 52:
+                    cube = getNewAgent(GET_DATA[event.keyCode])
+                    scene.add( cube );
+                    elements.push(cube);
+                    break;
+
+                case 69: // R
+                    rotate();
+                    break;
+            }
+        }
+
+        function clickHandler(event) {
+            event.preventDefault();
+
+            if(!event.shiftKey) return;
+
+            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+            mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+            raycaster.setFromCamera( mouse, camera );
+            var intersects = raycaster.intersectObjects( scene.children.filter(x => x.type === "Mesh") );
+            if ( intersects.length > 0 ) {
+                var object = intersects[ 0 ].object;
+                const added = selected.find(x => x.name === object.name);
+
+                if(added && selected.length <= 2 || !added && selected.length <= 1 ) {
+                    if(object.material.color.r === 0) {
+                        object.material.color.r = 200;
+                        object.selected = true;
+                        selected.push(object)
+                    } else {
+                        object.material.color.r = 0;
+                        object.selected = false;
+                        selected = selected.filter(function(item) { 
+                            return item.name !== object.name 
+                        });
+                    }
+                }
+
+                render();
+            }
+        }
+
+        function resizeHanlder() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+        }
+        
+        //#endregion
+        
+        
+        //#region Renderer
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        var raycaster = new THREE.Raycaster();
+        var mouse = new THREE.Vector2();
+            
+        //this is to get the correct pixel detail on portable devices
+        renderer.setPixelRatio( window.devicePixelRatio );
+
+        //and this sets the canvas' size.
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+        //#endregion
+
+        
+        //#region Scene
+        scene = new THREE.Scene();
+        //#endregion
+
+        
+        //#region Camera & Orbit
+        camera = new THREE.PerspectiveCamera( 
+            50,                                         //FOV
+            window.innerWidth / window.innerHeight,     //aspect
+            1,                                          //near clipping plane
+            100                                         //far clipping plane
+        );
+        camera.position.set( 0, 8, 10 );
+
+        orbit = new OrbitControls( camera, renderer.domElement );
+        // orbit.update();
+        // orbit.addEventListener( 'change', render );
+
+        // setup min/max zoom distance
+        orbit.minDistance = 10;
+        orbit.maxDistance = 20;
+
+        // setup max grid rotation
+        orbit.maxPolarAngle = 1.5;
+
+        //#endregion
+
+        
+        //#region Floor
+        
+        // var size = 10;
+        // var divisions = 10;
+        // var gridHelper = new THREE.GridHelper( size, divisions );
+        // scene.add( gridHelper );
+        // var gridXZ = new THREE.GridHelper(10, 10, new THREE.Color('yellow'), new THREE.Color('yellow'));
+        // scene.add(gridXZ);
+
+        // note: 4x4 checkboard pattern scaled so that each square is 25 by 25 pixels.
+        var floorTexture = new THREE.TextureLoader().load( 'Images/bkg.jpg', renderer.render( scene, camera ) );
+        floorTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        // var floorTexture = new THREE.ImageUtils.loadTexture( 'Images/bkg.jpg' );
+        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+        floorTexture.repeat.set( 5, 5 );
+        // DoubleSide: render texture on both sides of mesh
+        var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+        var floorGeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+        var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.position.y = 0;
+        floor.rotation.x = Math.PI / 2;
+        scene.add(floor);
+
+        //#endregion
+        
+        
+        // CIRCLE CONTAINER
+        // var color = new THREE.Mesh(new THREE.SphereGeometry(50, 128, 72), new THREE.MeshBasicMaterial({ color: "blue"}));
+        // var globe = new THREE.Mesh(new THREE.SphereGeometry(50, 128, 72), new THREE.MeshBasicMaterial({ color: "blue", wireframe: true }));
+        // globe.add(color);
+        // scene.add(globe);
+
+
+        //#region Lights
+        var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
+        scene.add( ambientLight );
+        // var light = new THREE.DirectionalLight( 0xffffff, 2 );
+        // light.position.set( -1, 1, 1 );
+        // scene.add( light );
+        //#endregion   
+        
+
+        //#region Drag events
+        
+        const dragControls = new DragControls( elements, camera, renderer.domElement );
+            dragControls.addEventListener( 'dragstart', function (event) { 
+                orbit.enabled = false;
+                // if(event.object.line) removeEntity(event.object.line);
+            } );
+            dragControls.addEventListener('drag', function(event) {
+                // do not allow user to drag under floor
+                orbit.enabled = false;
+                event.object.position.y = event.object.position.y <= 1.5 ? 1.5 : event.object.position.y;
+            });
+            dragControls.addEventListener( 'dragend', function (event) { 
+                event.object.position.y = 1;
+                orbit.enabled = true; 
+            } );
+        
+        //#endregion
+
+
+        //#region Windows Events
+        window.addEventListener( 'resize', resizeHanlder, false );
+        window.addEventListener( 'click', clickHandler, false );
+        window.addEventListener( 'keydown', keyHandler);
+        //#endregion
+        
+        animate();
+        
+    </script>
+</body>
