@@ -63,35 +63,35 @@
                 target: 'ADULT',
                 gender: 'MALE',
                 size: {
-                    x: 1,
-                    y: 2,
-                    z: 1
+                    x: 0.75,
+                    y: 1.5,
+                    z: 0.75
                 }
             },
             50: {
                 target: 'ADULT',
                 gender: 'FEMALE',
                 size: {
-                    x: 0.5,
-                    y: 0.5,
-                    z: 2
+                    x: 0.25,
+                    y: 0.25,
+                    z: 1.5
                 }
             },
             51: {
                 target: 'MINOR',
                 gender: 'MALE',
                 size: {
-                    x: 1,
+                    x: 0.5,
                     y: 1,
-                    z: 1
+                    z: 0.5
                 }
             },
             52: {
                 target: 'MINOR',
                 gender: 'FEMALE',
                 size: {
-                    x: 0.5,
-                    y: 0.5,
+                    x: 0.25,
+                    y: 0.25,
                     z: 1
                 }
             }
@@ -137,39 +137,46 @@
         }
 
         function rotate() {
-            if(selected.length == 2) _alert('Deseleccione los elementos');
+            if(selected.length == 2) {
+                alert('Deseleccione los elementos');
+                return;
+            }
 
-            if(selected.length == 0) _alert('Seleccione un elemento');
+            if(selected.length == 0) {
+                alert('Seleccione un elemento');
+                return;
+            }
 
             var object = scene.children.find(x => x.name === selected[0].name);
-            if(!object) _alert('Ha ocurrido un error');
+            if(!object) {
+                console.log("selected object not found on scene", {
+                    object: selected[0],
+                    scene: scene
+                });
+                alert('Ha ocurrido un error');
+                return;
+            }
 
             // lay entity back
             object.position.y = object.rotation.x > 0 ? 1 : 0.5; 
             object.rotateX(object.rotation.x > 0 ? (object.rotation.x * -1) : 55);
             render(); 
         }
-
-        function _alert(message) {
-            alert(message);
-            return;
-        }
         
         function keyHandler(event) {
-
-            if(!event) return;
-
+            if(!event || event.metaKey) return;
             switch ( event.keyCode ) {
                 case 49:
                 case 50:
                 case 51:
                 case 52:
                     cube = getNewAgent(GET_DATA[event.keyCode])
+                    cube.position.y = 0.5;
                     scene.add( cube );
                     elements.push(cube);
                     break;
 
-                case 69: // R
+                case 82: // R
                     rotate();
                     break;
             }
@@ -184,18 +191,23 @@
             mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
             raycaster.setFromCamera( mouse, camera );
-            var intersects = raycaster.intersectObjects( scene.children.filter(x => x.type === "Mesh") );
+            var intersects = raycaster.intersectObjects( scene.children.filter(x => x.type === "Mesh" && !!x.name) );
             if ( intersects.length > 0 ) {
                 var object = intersects[ 0 ].object;
                 const added = selected.find(x => x.name === object.name);
 
+                if(selected.length >= 1 && !added) {
+                    alert("Ya existe un representante seleccionado. Para continuar deseleccione el anterior.");
+                    return;
+                }
+
                 if(added && selected.length <= 2 || !added && selected.length <= 1 ) {
-                    if(object.material.color.r === 0) {
-                        object.material.color.r = 200;
+                    if(object.material.color.r === 1) {
+                        object.material.color.r = 242;
                         object.selected = true;
                         selected.push(object)
                     } else {
-                        object.material.color.r = 0;
+                        object.material.color.r = 1;
                         object.selected = false;
                         selected = selected.filter(function(item) { 
                             return item.name !== object.name 
@@ -286,12 +298,12 @@
         //#endregion
         
         
-        // CIRCLE CONTAINER
+        //#region CIRCLE CONTAINER
         // var color = new THREE.Mesh(new THREE.SphereGeometry(50, 128, 72), new THREE.MeshBasicMaterial({ color: "blue"}));
         // var globe = new THREE.Mesh(new THREE.SphereGeometry(50, 128, 72), new THREE.MeshBasicMaterial({ color: "blue", wireframe: true }));
         // globe.add(color);
         // scene.add(globe);
-
+        //#endregion
 
         //#region Lights
         var ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
@@ -307,15 +319,14 @@
         const dragControls = new DragControls( elements, camera, renderer.domElement );
             dragControls.addEventListener( 'dragstart', function (event) { 
                 orbit.enabled = false;
-                // if(event.object.line) removeEntity(event.object.line);
             } );
             dragControls.addEventListener('drag', function(event) {
                 // do not allow user to drag under floor
+                event.object.position.y = 1.5;
                 orbit.enabled = false;
-                event.object.position.y = event.object.position.y <= 1.5 ? 1.5 : event.object.position.y;
             });
             dragControls.addEventListener( 'dragend', function (event) { 
-                event.object.position.y = 1;
+                event.object.position.y = 0.5;
                 orbit.enabled = true; 
             } );
         
