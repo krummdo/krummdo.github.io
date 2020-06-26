@@ -65,9 +65,9 @@
                 target: 'ADULT',
                 gender: 'MALE',
                 size: {
-                    x: 0.75,
+                    x: 0.5,
                     y: 1.5,
-                    z: 0.75
+                    z: 0.5
                 }
             },
             50: {
@@ -118,7 +118,7 @@
             console.log('Add Agent', data)
 
             const Target = data.gender === 'MALE' ? THREE.BoxGeometry : THREE.CylinderGeometry;
-            const texture = new THREE.TextureLoader().load( './wood.jpg', renderer.render( scene, camera ) );
+            const texture = new THREE.TextureLoader().load( './wood.jpeg', renderer.render( scene, camera ) );
                 texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
             const mesh = new THREE.Mesh(
@@ -173,7 +173,26 @@
                 case 51:
                 case 52:
                     cube = getNewAgent(GET_DATA[event.keyCode])
-                    cube.position.y = 0.5;
+                    switch (event.keyCode) {
+                        case 49:
+                            cube.position.y = 0.90;
+                            cube.representante = 'AM';
+                            break;
+                        case 50:
+                            cube.position.y = 0.90
+                            cube.representante = 'AF';
+                            break;
+                        case 51:
+                            cube.position.y = 0.6
+                            cube.representante = 'MM';
+                            break;
+                        case 52:
+                            cube.position.y = 0.6
+                            cube.representante = 'MF';
+                            break;
+                        default:
+                            break;
+                    }
                     scene.add( cube );
                     elements.push(cube);
                     break;
@@ -284,14 +303,15 @@
         // scene.add(gridXZ);
 
         // note: 4x4 checkboard pattern scaled so that each square is 25 by 25 pixels.
-        var floorTexture = new THREE.TextureLoader().load( './bkg.jpg', renderer.render( scene, camera ) );
+        var floorTexture = new THREE.TextureLoader().load( './rug.png', renderer.render( scene, camera ) );
         floorTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         // var floorTexture = new THREE.ImageUtils.loadTexture( 'Images/bkg.jpg' );
         floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
         floorTexture.repeat.set( 5, 5 );
         // DoubleSide: render texture on both sides of mesh
         var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
-        var floorGeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+        // var floorGeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+        var floorGeometry = new THREE.BoxGeometry(10, 10, 0.2);
         var floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.position.y = 0;
         floor.rotation.x = Math.PI / 2;
@@ -328,7 +348,22 @@
                 orbit.enabled = false;
             });
             dragControls.addEventListener( 'dragend', function (event) { 
-                event.object.position.y = 0.5;
+                switch (event.object.representante) {
+                        case 'AM':
+                            event.object.position.y = 0.90;
+                            break;
+                        case 'AF':
+                            event.object.position.y = 0.90;
+                            break;
+                        case 'MM':
+                            event.object.position.y = 0.6;
+                            break;
+                        case 'MF':
+                            event.object.position.y = 0.6;
+                            break;
+                        default:
+                            break;
+                    }
                 orbit.enabled = true; 
             } );
         
